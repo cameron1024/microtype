@@ -23,6 +23,38 @@ pub trait Microtype {
 }
 
 /// Create a new microtype
+///
+/// For example, to create a microtype called `EmailAddress` that wraps a `String`, write:
+/// ```
+/// # #[macro_use]
+/// # extern crate microtype;
+/// microtype!(String => EmailAddress);
+/// ```
+///
+/// Microtypes by default will have the following:
+///  - `repr(transparent)`
+///  - `derive(Debug, Clone, Eq, PartialEq)`
+///  - `serde(transparent)` (if the `serde` feature is enabled)
+///
+///  However, if you wish to customise the derived traits, put them in a comma separated list after
+///  the name of the type:
+/// ```
+/// # #[macro_use]
+/// # extern crate microtype;
+/// microtype!(String => EmailAddress, Clone, Debug);  // doesn't impl PartialEq or Eq
+/// ```
+/// A trailing comma can be used to not derive *any* traits:
+/// ```compile_fail
+/// # #[macro_use]
+/// # extern crate microtype;
+/// # use microtype::Microtype;
+/// microtype!(String => EmailAddress,);  // note the trailing comma
+///
+/// fn main() {
+///   let email = EmailAddress::new("example@example.com".into());
+///   let cloned = email.clone();  // error: EmailAddress is not Clone
+/// }
+/// ```
 #[macro_export]
 macro_rules! microtype {
     ($inner:ty => $name:ident) => {
