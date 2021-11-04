@@ -28,6 +28,10 @@ Let's take a look at that but with microtypes instead:
 microtype!(String => UserId);
 microtype!(String => OrderId);
 
+fn handle_order(user_id: UserId, order_id: OrderId) {
+  // ...
+} 
+
 fn main() {
   let user_id: UserId = ...;
   let order_id: OrderId = ...;
