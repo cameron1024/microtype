@@ -33,6 +33,13 @@ pub trait Microtype {
 /// # use microtype::Microtype;
 /// microtype!(String => EmailAddress);
 /// ```
+/// To declare multiple microtypes at once:
+/// ```
+/// # #[macro_use]
+/// # extern crate microtype;
+/// # fn main() {}
+/// # use microtype::Microtype;
+/// microtype!(String => [Foo, Bar, Baz]);
 ///
 /// Microtypes by default will have the following:
 ///  - `repr(transparent)`
