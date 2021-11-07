@@ -1,5 +1,6 @@
-
 /// A trait implemented by microtypes
+///
+/// Provides some useful common functions for working with microtypes
 pub trait Microtype {
     /// The type of the value wrapped by this microtype
     /// For example, the inner type of an `EmailAddress` could be a `String`
@@ -28,12 +29,15 @@ pub trait Microtype {
 /// ```
 /// # #[macro_use]
 /// # extern crate microtype;
+/// # fn main() {}
+/// # use microtype::Microtype;
 /// microtype!(String => EmailAddress);
 /// ```
 ///
 /// Microtypes by default will have the following:
 ///  - `repr(transparent)`
 ///  - `derive(Debug, Clone, Eq, PartialEq)`
+///  - `derive(serde::Serialize, serde::Deserialize)` (if the `serde` feature is enabled)
 ///  - `serde(transparent)` (if the `serde` feature is enabled)
 ///
 ///  However, if you wish to customise the derived traits, put them in a comma separated list after
@@ -41,6 +45,8 @@ pub trait Microtype {
 /// ```
 /// # #[macro_use]
 /// # extern crate microtype;
+/// # fn main() {}
+/// # use microtype::Microtype;
 /// microtype!(String => EmailAddress, Clone, Debug);  // doesn't impl PartialEq or Eq
 /// ```
 /// A trailing comma can be used to not derive *any* traits:
@@ -57,20 +63,30 @@ pub trait Microtype {
 /// ```
 #[macro_export]
 macro_rules! microtype {
+    ($inner:ty => [$name:ident]) => {microtype!($inner => $name);};
+    ($inner:ty => [$name:ident], $($traits:tt)*) => {microtype!($inner => $name, $($traits)*);};
+    ($inner:ty => [$name:ident, $($names:ident),*]) => {
+        microtype!($inner => $name);
+        microtype!($inner => [$($names),*]);
+    };
+    ($inner:ty => [$name:ident, $($names:ident),*], $($traits:tt)*) => {
+        microtype!($inner => $name, $($traits)*);
+        microtype!($inner => [$($names),*], $($traits)*);
+    };
     ($inner:ty => $name:ident) => {
         microtype!($inner => $name, Debug, Clone, Eq, PartialEq);
     };
     ($inner:ty => $name:ident, $($traits:tt),*) => {
+
         #[repr(transparent)]
         #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
         #[cfg_attr(feature = "serde", serde(transparent))]
         #[derive($($traits),*)]
-        
         struct $name {
             inner: $inner,
         }
 
-        impl Microtype for $name {
+        impl $crate::Microtype for $name {
             type Inner = $inner;
 
             fn new(inner: Self::Inner) -> Self {
@@ -120,10 +136,10 @@ macro_rules! copy_microtype {
     }
 }
 
+
 #[cfg(test)]
 mod tests {
     use super::*;
-
 
     // non Eq types can be created by specifying an empty list of traits
     microtype!(f64 => Coord, );
@@ -153,7 +169,29 @@ mod tests {
         let cloned = email.clone();
         let username = email.transmute::<Username>();
         assert_eq!(cloned.into_inner(), username.into_inner());
+    }
 
+    microtype!(String => [Name, Address]);
+
+    #[test]
+    fn multiple_declarations() {
+        let name = Name::new("name".into());
+        let address = Address::new("example road".into());
+        assert_eq!(name.into_inner(), "name");
+        assert_eq!(address.into_inner(), "example road");
+    }
+
+    microtype!(f64 => [X, Y, Z], Clone, Copy, PartialEq, Debug);
+
+    #[test]
+    fn multiple_declarations_with_traits() {
+        let x = X::new(1.0);
+        let y = Y::new(2.0);
+        let z = Z::new(3.0);
+
+        assert_eq!(x.into_inner(), 1.0);
+        assert_eq!(y.into_inner(), 2.0);
+        assert_eq!(z.into_inner(), 3.0);
     }
 
     #[cfg(serde)]
@@ -170,6 +208,5 @@ mod tests {
         let example: Example = serde_json::from_str(json).unwrap();
         assert_eq!(example.email, "1234");
         assert_eq!(example.username, "2345");
-
     }
 }
