@@ -40,6 +40,7 @@ pub trait Microtype {
 /// # fn main() {}
 /// # use microtype::Microtype;
 /// microtype!(String => [Foo, Bar, Baz]);
+/// ```
 ///
 /// Microtypes by default will have the following:
 ///  - `repr(transparent)`
