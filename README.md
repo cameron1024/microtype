@@ -28,6 +28,9 @@ Let's take a look at that but with microtypes instead:
 microtype!(String => UserId);
 microtype!(String => OrderId);
 
+// or declare them in one statement:
+// microtype!(String => [UserId, OrderId]);
+
 fn handle_order(user_id: UserId, order_id: OrderId) {
   // ...
 } 
