@@ -69,6 +69,7 @@ pub trait Microtype {
 ///   let cloned = email.clone();  // error: EmailAddress is not Clone
 /// }
 /// ```
+#[cfg(serde)]
 #[macro_export]
 macro_rules! microtype {
     ($inner:ty => [$name:ident]) => {microtype!($inner => $name);};
@@ -87,10 +88,62 @@ macro_rules! microtype {
     ($inner:ty => $name:ident, $($traits:tt),*) => {
 
         #[repr(transparent)]
-        #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-        #[cfg_attr(feature = "serde", serde(transparent))]
+        #[derive(serde::Deserialize, serde::Serialize)]
+        #[serde(transparent)]
         #[derive($($traits),*)]
-        struct $name {
+        pub struct $name {
+            inner: $inner,
+        }
+
+        impl $crate::Microtype for $name {
+            type Inner = $inner;
+
+            fn new(inner: Self::Inner) -> Self {
+                Self { inner }
+            }
+
+            fn into_inner(self) -> Self::Inner {
+                self.inner
+            }
+
+            fn inner(&self) -> &Self::Inner {
+                &self.inner
+            }
+
+            fn inner_mut(&mut self) -> &mut Self::Inner {
+                &mut self.inner
+            }
+
+            fn transmute<T: Microtype<Inner = Self::Inner>>(self) -> T {
+                T::new(self.into_inner())
+            }
+        }
+    };
+}
+
+/// See documentation for the `serde` variant, this version doesn't implement serde traits or
+/// `serde(transparent)`
+#[cfg(not(serde))]
+#[macro_export]
+macro_rules! microtype {
+    ($inner:ty => [$name:ident]) => {microtype!($inner => $name);};
+    ($inner:ty => [$name:ident], $($traits:tt)*) => {microtype!($inner => $name, $($traits)*);};
+    ($inner:ty => [$name:ident, $($names:ident),*]) => {
+        microtype!($inner => $name);
+        microtype!($inner => [$($names),*]);
+    };
+    ($inner:ty => [$name:ident, $($names:ident),*], $($traits:tt)*) => {
+        microtype!($inner => $name, $($traits)*);
+        microtype!($inner => [$($names),*], $($traits)*);
+    };
+    ($inner:ty => $name:ident) => {
+        microtype!($inner => $name, Debug, Clone, Eq, PartialEq);
+    };
+    ($inner:ty => $name:ident, $($traits:tt),*) => {
+
+        #[repr(transparent)]
+        #[derive($($traits),*)]
+        pub struct $name {
             inner: $inner,
         }
 
