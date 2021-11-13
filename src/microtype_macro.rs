@@ -2,7 +2,7 @@
 ///
 /// Provides some useful common functions for working with microtypes
 pub trait Microtype {
-    /// The type of the value wrapped by this microtype
+    /// The type of the wrapped value
     /// For example, the inner type of an `EmailAddress` could be a `String`
     type Inner;
 

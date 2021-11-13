@@ -101,10 +101,10 @@
 //!
 //!
 
-#[cfg(serde)]
-#[macro_use]
-extern crate serde;
-
 mod microtype_macro;
+mod secret_microtype;
 
+pub use secret_microtype::SecretMicrotype;
 pub use microtype_macro::Microtype;
+pub use secrecy;
+pub use serde;

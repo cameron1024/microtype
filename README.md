@@ -43,6 +43,8 @@ fn main() {
 ```
 Great! It doesn't compile. By introducing microtypes, we've moved this run-time error into a compile-time error.
 
+In the future, I aim to make both `serde` and `secrecy` optional
+
 ### Contributing
 
 Any and all contributions are always welcome! Feel free to raise an issue/submit a PR, etc.

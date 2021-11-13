@@ -1,6 +1,6 @@
 [package]
 name = "microtype"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 repository = "https://github.com/cameron1024/microtype"
 license = "MIT"
@@ -10,6 +10,9 @@ description = "A crate to simplify the creation of microtypes"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
+secrecy = { version = "0.8", features = ["serde"] }
+paste = "1.0"
 
 [dev-dependencies]
 serde_json = "1.0"
+
