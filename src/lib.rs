@@ -108,3 +108,4 @@ pub use secret_microtype::SecretMicrotype;
 pub use microtype_macro::Microtype;
 pub use secrecy;
 pub use serde;
+pub use paste;

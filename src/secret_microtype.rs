@@ -69,7 +69,7 @@ macro_rules! secret_microtype {
         secret_microtype!(ser $inner => $name);
     };
     (ser $inner:ty => $name:ident) => {
-        paste::paste! {
+        $crate::paste::paste! {
             #[repr(transparent)]
             #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
             #[serde(transparent)]
@@ -111,7 +111,7 @@ macro_rules! secret_microtype {
         secret_microtype!($inner => $name);
     };
     ($inner:ty => $name:ident) => {
-        paste::paste! {
+        $crate::paste::paste! {
             #[repr(transparent)]
             #[derive(Debug, Clone, $crate::serde::Deserialize)]
             #[serde(transparent)]
