@@ -62,20 +62,37 @@ pub trait SecretMicrotype: ExposeSecret<Self::Inner> {
 #[macro_export]
 macro_rules! secret_microtype {
     (ser $inner:ty => [$name:ident, $($names:ident),*]) => {
-        secret_microtype!(ser $inner => $name);
-        secret_microtype!(ser $inner => [$($names),*]);
+        secret_microtype!(ser $inner => [$name, $($names),*], );
     };
     (ser $inner:ty => [$name:ident]) => {
-        secret_microtype!(ser $inner => $name);
+        secret_microtype!(ser $inner => [$name],);
     };
-    (ser $inner:ty => $name:ident) => {
+    ($inner:ty => [$name:ident, $($names:ident),*]) => {
+        secret_microtype!($inner => [$name, $($names),*],);
+    };
+    ($inner:ty => [$name:ident]) => {
+        secret_microtype!($inner => [$name],);
+    };
+
+
+
+
+
+    (ser $inner:ty => [$name:ident, $($names:ident),*], $($derives:tt),*) => {
+        secret_microtype!(ser $inner => [$name], $($derives),*);
+        secret_microtype!(ser $inner => [$($names),*], $($derives),*);
+    };
+    (ser $inner:ty => [$name:ident], $($derives:tt),*) => {
         $crate::paste::paste! {
             #[repr(transparent)]
-            #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+            #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+            #[derive($($derives),*)]
             #[serde(transparent)]
             pub struct $name(secrecy::Secret<[<$name Wrapper>]>);
             #[repr(transparent)]
-            #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+            #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+            #[derive($($derives),*)]
+            #[serde(transparent)]
             pub struct [<$name Wrapper>]($inner);
 
             impl $crate::secrecy::CloneableSecret for [<$name Wrapper>] {}
@@ -103,21 +120,21 @@ macro_rules! secret_microtype {
             }
         }
     };
-    ($inner:ty => [$name:ident, $($names:ident),*]) => {
-        secret_microtype!($inner => $name);
-        secret_microtype!($inner => [$($names),*]);
+    ($inner:ty => [$name:ident, $($names:ident),*], $($derives:tt),*) => {
+        secret_microtype!($inner => [$name], $($derives),*);
+        secret_microtype!($inner => [$($names),*], $($derives),*);
     };
-    ($inner:ty => [$name:ident]) => {
-        secret_microtype!($inner => $name);
-    };
-    ($inner:ty => $name:ident) => {
+    ($inner:ty => [$name:ident], $($derives:tt),*) => {
         $crate::paste::paste! {
             #[repr(transparent)]
-            #[derive(Debug, Clone, $crate::serde::Deserialize)]
+            #[derive($($derives),*)]
+            #[derive(serde::Deserialize, Debug, Clone)]
             #[serde(transparent)]
             pub struct $name($crate::secrecy::Secret<[<$name Wrapper>]>);
             #[repr(transparent)]
-            #[derive(Debug, Clone, $crate::serde::Deserialize)]
+            #[derive($($derives),*)]
+            #[derive($crate::serde::Deserialize, Debug, Clone)]
+            #[serde(transparent)]
             pub struct [<$name Wrapper>]($inner);
 
             impl $crate::secrecy::CloneableSecret for [<$name Wrapper>] {}
@@ -152,8 +169,8 @@ macro_rules! secret_microtype {
 mod tests {
     use super::*;
 
-    secret_microtype!(ser String => Jwt);
-    secret_microtype!(String => Password);
+    secret_microtype!(ser String => [Jwt]);
+    secret_microtype!(String => [Password, Other]);
 
     #[test]
     fn example_non_serializable() {
@@ -171,5 +188,9 @@ mod tests {
 
         assert_eq!(parsed.expose_secret(), jwt.expose_secret());
         assert_eq!(serialized, r#""jwt""#);
+    }
+
+    mod can_customise_derives {
+        secret_microtype!(ser String => [Asdf],);
     }
 }
