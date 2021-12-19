@@ -37,7 +37,7 @@ pub trait SecretMicrotype: ExposeSecret<Self::Inner> {
 ///  # extern crate microtype;
 ///  # use microtype::*;
 ///  
-///  secret_microtype!(String => Password);
+///  secret_microtype!(String => [Password]);
 ///
 ///  fn main() {
 ///     let password = Password::new("asdf".into());
@@ -52,7 +52,7 @@ pub trait SecretMicrotype: ExposeSecret<Self::Inner> {
 ///  # use serde::Serialize;
 ///  # fn main() {}
 ///  # struct Credentials;
-///  secret_microtype!(ser String => Jwt);
+///  secret_microtype!(ser String => [Jwt]);
 ///  
 ///  fn login(credentials: Credentials) -> impl Serialize {
 ///     // ...
