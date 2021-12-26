@@ -1,5 +1,3 @@
-#![deny(missing_docs)]
-
 //! A library to ease creation of so-called "microtypes".
 //!
 //! A microtype is a thin wrapper around a more primitive type (e.g. `String`), that can help to provide
@@ -38,20 +36,27 @@
 //! # fn retrieve_user_id() -> String { "".into() }
 //! # fn retrieve_order_id() -> String { "".into() }
 //! // microtype wrappers around String
-//! microtype!(Stirng => UserId);  
-//! microtype!(Stirng => OrderId);
+//! microtype! {
+//!     String {
+//!         UserId,
+//!         OrderId,
+//!     }
+//! }
 //!
 //! fn handle_order(user_id: UserId, order_id: OrderId) {
-//!    // ...
+//!     // ...
 //! }
 //!
 //! fn main() {
-//!   let user_id: OrderId = retrieve_user_id();
-//!   let order_id: UserId = retrieve_order_id();
+//!     let user_id: OrderId = retrieve_user_id();
+//!     let order_id: UserId = retrieve_order_id();
 //!
-//!   handle_order(order_id, user_id);  // Error: incompatible types
+//!     handle_order(order_id, user_id);  // Error: incompatible types
 //! }
 //! ```
+//! Excellent, a run-time error has been turned into a compile time error.
+//!
+//! ## Basic usage
 //!
 //! To create a microtype, use the `microtype` macro. Microtypes also implement the `Microtype`
 //! trait which defines some common behaviours:
@@ -59,53 +64,109 @@
 //! # #[macro_use]
 //! # extern crate microtype;
 //! # use microtype::Microtype;
-//! microtype!(String => UserId);
-//! microtype!(String => Username);
-//!
-//! fn main() {
-//!   let user_id = UserId::new("id".into());  // create new UserId
-//!   let string = user_id.into_inner();       // consume UserId, return inner String
-//!   let username = Username::new(string);    // create new Username
-//!
-//!   // sometimes you need to explicitly change the type of a value:
-//!   let user_id: UserId = username.transmute();
+//! microtype! {
+//!     #[derive(Debug, Clone)]
+//!     String {
+//!         #[derive(PartialEq)]
+//!         UserId,    // implements Debug, Clone and PartialEq
+//!         Username,  // only implements Debug and Clone
+//!     }
 //! }
 //!
-//! ```
-//! By default, `Debug`, `Clone`, `Eq` and `PartialEq` are derived for a microtype. However, this
-//! can be customised by providing a list of traits to derive:
-//! ```compile_fail
-//! # fn main() {}
-//! microtype!(f64 => Coord);  // Error: f64 doesn't implement Eq
-//! ```
-//! Instead:
-//! ```
-//! # #[macro_use]
-//! # extern crate microtype;
-//! # use microtype::Microtype;
-//! # fn main() {}
-//! microtype!(f64 => Coord, Clone, Debug, PartialEq);  // works
-//! ```
-//! If you just want to add `Copy` to the derived traits, you can use the `copy_microtype` macro
-//! instead:
-//! ```
-//! # #[macro_use]
-//! # extern crate microtype;
-//! # use microtype::Microtype;
-//! # fn main() {}
-//! microtype!(i32 => Foo, Clone, Debug, Eq, PartialEq, Copy);
-//! // behaves the same as:
-//! copy_microtype!(i32 => Bar);
-//! ```
-//! Microtypes are also `repr(transparent)`.
+//! fn main() {
+//!     let user_id = UserId::new("id".into());  // create new UserId
+//!     let string = user_id.into_inner();       // consume UserId, return inner String
+//!     let username = Username::new(string);    // create new Username
 //!
+//!     // sometimes you need to explicitly change the type of a value:
+//!     let user_id: UserId = username.transmute();
 //!
+//!     // microtypes also implement Deref 
+//!     let length = user_id.len();
+//!     assert_eq!(length, 2);
+//! }
+//! ```
+//!
+//! If built with the `serde_impls` feature, microtypes will be "transparent" when interacting with
+//! `serde`. For example:
+//! ```
+//! # use microtype::microtype;
+//! # use serde::{Serialize, };
+//! ```
+//!
+//! ## Secrets
+//!
+//! Some types may be considered "sensitive" (for example: passwords, session tokens, maybe even
+//! email addresses depending on your definition). For this purpose, microtypes can be marked as
+//! `secret`:
+//! ```
+//! # use microtype::microtype;
+//! # use microtype::SecretMicrotype;
+//! # use microtype::secrecy::ExposeSecret;
+//! microtype! {
+//!   secret String {
+//!     Password
+//!   }
+//! }
+//!
+//! fn main() {
+//!     let password = Password::new("secret password".to_string());
+//!     assert_eq!(password.expose_secret(), "secret password");
+//! }
+//! ```
+//! Secret microtypes don't implement [`microtype::Microtype`], instead they implement
+//! [`microtype::SecretMicrotype`], which has a much more restrictive API:
+//!  - Mutable and owned access to the inner data is not possible, it is only possible to get a
+//!  shared reference to the inner data via [`secrecy::ExposeSecret::expose_secret`].
+//!  - They `#[derive(Debug, Clone)]` (and optionally `Serialize` and `Deserialize`) but do not support adding extra derive macros.
+//!
+//! Internally, they wrap the contained data in [`secrecy::Secret`], which provides some nice
+//! safety features. In particular:
+//!  - The debug representation is redacted. This is can prevent against accidentally leaking
+//!  data to logs, without forgoing a `Debug` implementation (this means you can still
+//!  `#[derive(Debug)]` on structs which contain secret data)
+//!  - Data is zeroized after use, meaning the underlying data is overwritten with 0s, which
+//!  ensures sensitive data exists in memory only for as long as is needed. (Caveat: not all types
+//!  have perfect zeroization implementations, notably `Vec`, etc. will not be able to zeroize
+//!  previous allocations)
+//!  - when using `serde`, secret microtypes do not implement [`serde::Serialize`]. For example, in
+//!  a web server, using a secret microtype for `Password`s would prevent a password from being
+//!  sent in a web response, at compile time.
+//!
+//! ## Serializable Secrets
+//!
+//! That final point can be overly restrictive at times. For example, session tokens might
+//! reasonably be considered "sensitive", but you are likely going to want to serialize them at
+//! some point.
+//!
+//! For this purpose, there is an escape hatch. By declaring an `out secret`, a [`serde::Serialize`] 
+//! implementation will be generated for your microtype:
+//!
+//! ```
+//! # use serde::Serialize;
+//! # use microtype::microtype;
+//! microtype! {
+//!     out secret String {
+//!         SessionToken
+//!     }
+//! }
+//!
+//! #[derive(Serialize)]
+//! struct LoginResponse {
+//!     token: SessionToken
+//! }
+//! ```
 
-mod microtype_macro;
-mod secret_microtype;
 
-pub use secret_microtype::SecretMicrotype;
-pub use microtype_macro::Microtype;
+
+pub use microtype_macro::microtype;
+pub use microtype_core::*;
 pub use secrecy;
-pub use serde;
-pub use paste;
+
+#[cfg(test)]
+#[test]
+fn ui() {
+    let t = trybuild::TestCases::new();
+    t.compile_fail("tests/ui/fail/*.rs");
+    t.pass("tests/ui/pass/*.rs");
+}

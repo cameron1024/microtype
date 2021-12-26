@@ -1,0 +1,5 @@
+error: expected curly braces
+ --> tests/ui/fail/incorrect_syntax.rs:4:12
+  |
+4 |     String => [Email]
+  |            ^^
