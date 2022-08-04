@@ -9,7 +9,7 @@ microtype_macro::microtype! {
 
 
 fn main() {
-    use microtype_core::SecretMicrotype;
+    use microtype::SecretMicrotype;
 
     let token = Token::new("asdf".into());
     assert_serialize(token.clone());

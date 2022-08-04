@@ -6,7 +6,7 @@ microtype_macro::microtype! {
 
 
 fn main() {
-    use microtype_core::SecretMicrotype;
+    use microtype::SecretMicrotype;
     let password = Password::new("asdf".into());
     assert_serialize(password);
 }

@@ -1,4 +1,4 @@
-use microtype_core::Microtype;
+use microtype::Microtype;
 
 microtype_macro::microtype! {
     #[derive(Clone)]
