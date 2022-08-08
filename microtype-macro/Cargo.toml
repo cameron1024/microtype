@@ -1,0 +1,27 @@
+[package]
+name = "microtype-macro"
+version = "0.2.0"
+edition = "2021"
+license = "MIT"
+description = "Proc macro for generating microtypes"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1.0"
+syn = { version = "1.0", features = ["extra-traits"] }
+proc-macro2 = "1.0"
+
+[dev-dependencies]
+trybuild = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+
+[features]
+default = ["deref_impls", "test_impls"]
+
+serde = []
+deref_impls = []
+test_impls = []
+secret = []
+

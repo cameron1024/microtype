@@ -22,3 +22,5 @@ jobs:
       run: cargo test --verbose
     - name: Run tests (all features)
       run: cargo test --verbose --all-features
+    - name: Cargo doc
+      run: cargo doc
