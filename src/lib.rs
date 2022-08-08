@@ -1,7 +1,8 @@
 #![warn(clippy::all)]
 #![warn(rustdoc::all)]
 
-//! A library to generate "microtypes" (A.K.A. "newtypes").
+//! A library to generate "microtypes" (A.K.A. "newtypes"). Opinionated in favour of ergonomics
+//! over maximum flexibility.
 //!
 //! A microtype is a thin wrapper around an underlying type, that helps disambiguate similar uses
 //! of the same type

@@ -117,6 +117,18 @@ fn generate_structs(
     (tokens, wrapper)
 }
 
+fn string_impls(name: Ident) -> TokenStream {
+    quote! {
+        impl ::std::str::FromStr for #name {
+            type Err = ::std::convert::Infallible;
+
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                Ok(<Self as ::microtype::SecretMicrotype>::new(s.to_string()))
+            }
+        }
+    }
+}
+
 pub fn generate_secret(
     inner: Type,
     name: Ident,
@@ -137,6 +149,12 @@ pub fn generate_secret(
     let expose_secret_impl = expose_secret_impl(&name, &inner);
     let secret_microtype_impl = secret_microtype_impl(&name, &wrapper, &inner);
 
+    let string_impls = if special_attrs.string {
+        string_impls(name)
+    } else {
+        quote! {}
+    };
+
     quote! {
         #struct_defs
 
@@ -144,5 +162,6 @@ pub fn generate_secret(
         #expose_secret_impl
         #secret_microtype_impl
         #test_impls
+        #string_impls
     }
 }
