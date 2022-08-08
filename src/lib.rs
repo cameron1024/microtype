@@ -119,7 +119,8 @@
 //! # use microtype::SecretMicrotype;
 //! # use microtype::secrecy::ExposeSecret;
 //! microtype! {
-//!   secret String {
+//!   #[secret]
+//!   String {
 //!     Password
 //!   }
 //! }
@@ -155,7 +156,7 @@
 //! redacting their debug implementation, but also need to be serialized. For types like this, you
 //! can use `#[secret(serialize)]` to make the type implement `Serialize`.
 //!
-//! ```
+//! ```ignore
 //! # use serde::Serialize;
 //! # use microtype::microtype;
 //! microtype! {
@@ -246,4 +247,9 @@ fn ui() {
     let t = trybuild::TestCases::new();
     t.compile_fail("tests/ui/fail/*.rs");
     t.pass("tests/ui/pass/*.rs");
+
+    #[cfg(feature = "serde")]
+    t.pass("tests/ui/pass/serde/*.rs");
+    #[cfg(feature = "serde")]
+    t.compile_fail("tests/ui/fail/serde/*.rs");
 }

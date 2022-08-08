@@ -1,5 +1,6 @@
 microtype_macro::microtype! {
-    secret String {
+    #[secret]
+    String {
         Password
     }
 }

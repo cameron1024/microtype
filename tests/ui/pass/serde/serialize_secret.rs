@@ -1,3 +1,4 @@
+
 microtype_macro::microtype! {
     #[secret(serialize)]
     String {
@@ -9,7 +10,6 @@ microtype_macro::microtype! {
     }
 }
 
-
 fn main() {
     use microtype::SecretMicrotype;
 
@@ -20,6 +20,5 @@ fn main() {
     let password = Password::new("asdf".into());
     assert_deserialize(password);
 }
-
 fn assert_serialize<T: serde::Serialize>(_t: T) {}
 fn assert_deserialize<'a, T: serde::Deserialize<'a>>(_t: T) {}

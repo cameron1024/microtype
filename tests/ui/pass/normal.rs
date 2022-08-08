@@ -15,6 +15,6 @@ fn main() {
     assert_eq!(email.inner_mut(), "hello");
     assert_eq!(email.clone().into_inner(), "hello");
 
-    let username: Username = email.transmute();
+    let username: Username = email.convert();
     assert_eq!(username.into_inner(), "hello");
 }
