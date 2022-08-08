@@ -9,7 +9,7 @@ description = "A crate to simplify the creation of microtypes"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-microtype-macro = { version = "0.1.6", path = "./microtype-macro" }
+microtype-macro = { version = "0.2.0", path = "./microtype-macro" }
 secrecy = { version = "0.8", optional = true }
 
 [dev-dependencies]
