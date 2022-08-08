@@ -1,14 +1,15 @@
 microtype::microtype! {
-    secret String {
+    #[secret]
+    String {
         Password
     }
 }
 
 fn main() {
-    use microtype::SecretMicrotype;
     use microtype::secrecy::ExposeSecret;
+    use microtype::SecretMicrotype;
     let password = Password::new("string".into());
-    assert_eq!(password.expose_secret(), "string"); 
+    assert_eq!(password.expose_secret(), "string");
 
     // secret microtype is clone and debug by default
     let _ = password.clone();

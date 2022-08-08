@@ -3,8 +3,8 @@
 
 //! A library to generate "microtypes" (A.K.A. "newtypes").
 //!
-//! A microtype is a thin wrapper around a more primitive type (e.g. `String`), that helps prevent
-//! logic and security bugs at compile time.
+//! A microtype is a thin wrapper around an underlying type, that helps disambiguate similar uses
+//! of the same type
 //!
 //! For example, consider the following code from an imaginary e-commerce web backend:
 //! ```
@@ -26,10 +26,10 @@
 //!
 //! This code compiles, but has a bug: the `order_id` and `user_id` are used in the wrong order.
 //! This example is fairly trivial and easy to spot, but the larger a project gets, the harder it
-//! becomes to spot these issues. This becomes especially troublesome if you want to refactor. For
+//! becomes to detect these issues. This becomes especially troublesome if you want to refactor. For
 //! example, if you wanted to swap the order of the arguments, you'd have to make sure you visited
-//! all the calls to this function and swapped the arguments manually. What if we could make the
-//! compiler do this?
+//! all the calls to this function and swapped the arguments manually. Luckily, we can get the
+//! compiler to help with this.
 //!
 //! Microtypes solve this problem. They wrap some inner type, and allow the compiler to distinguish
 //! between different uses of the same underlying type. For example, we could rewrite the earlier
@@ -83,13 +83,14 @@
 //!         Timestamp
 //!     }
 //!
-//!     // use `secret` to mark a type as secret
-//!     secret String {
+//!     // use the `#[secret]` attribute to mark a type as "secret"
+//!     #[secret]
+//!     String {
 //!         Password
 //!     }
 //!
-//!     // use `out secret` to make a secret type implement serde::Serialize
-//!     out secret String {
+//!     // use `#[secret(serialize)]` to make a secret type implement serde::Serialize
+//!     String {
 //!         SessionToken
 //!     }
 //! }
@@ -100,26 +101,19 @@
 //!     let username = Username::new(string);    // create new Username
 //!
 //!     // sometimes you need to explicitly change the type of a value:
-//!     let user_id: UserId = username.transmute();
+//!     let user_id: UserId = username.convert();
 //!
-//!     // microtypes also implement Deref
+//!     // microtypes also optionally implement Deref
 //!     let length = user_id.len();
 //!     assert_eq!(length, 2);
 //! }
 //! ```
 //!
-//! If built with the `serde_impls` feature, microtypes will be "transparent" when interacting with
-//! `serde`. For example:
-//! ```
-//! # use microtype::microtype;
-//! # use serde::{Serialize, };
-//! ```
 //!
 //! ## Secrets
 //!
-//! Some types may be considered "sensitive" (for example: passwords, session tokens, maybe even
-//! email addresses depending on your definition). For this purpose, microtypes can be marked as
-//! `secret`:
+//! Some types may be considered "sensitive" (for example: passwords, session tokens, etc).
+//! For this purpose, microtypes can be marked as `#[secret]`:
 //! ```
 //! # use microtype::microtype;
 //! # use microtype::SecretMicrotype;
@@ -138,36 +132,35 @@
 //! Secret microtypes don't implement [`Microtype`], instead they implement
 //! [`SecretMicrotype`], which has a much more restrictive API:
 //!  - Mutable and owned access to the inner data is not possible, it is only possible to get a
-//!  shared reference to the inner data via [`secrecy::ExposeSecret::expose_secret`].
+//!  shared reference to the inner data via [`secrecy::ExposeSecret::expose_secret`], which makes
+//!  accesses easier to audit.
 //!  - They `#[derive(Debug, Clone)]` (and optionally `Serialize` and `Deserialize`) but do not support adding extra derive macros.
 //!
 //! Internally, they wrap the contained data in [`secrecy::Secret`], which provides some nice
 //! safety features. In particular:
 //!  - The debug representation is redacted. This is can prevent against accidentally leaking
-//!  data to logs, without forgoing a `Debug` implementation (this means you can still
+//!  data to logs, but it still *has* a `Debug` implementation (so you can still
 //!  `#[derive(Debug)]` on structs which contain secret data)
 //!  - Data is zeroized after use, meaning the underlying data is overwritten with 0s, which
 //!  ensures sensitive data exists in memory only for as long as is needed. (Caveat: not all types
-//!  have perfect zeroization implementations, notably `Vec`, etc. will not be able to zeroize
+//!  have perfect zeroize implementations. Notably `Vec` (and `String`) will not be able to zeroize
 //!  previous allocations)
-//!  - when using `serde`, secret microtypes do not implement `Serialize`. For example, in
-//!  a web server, using a secret microtype for `Password`s would prevent a password from being
-//!  sent in a web response, checked at compile time.
+//!  - when using `serde`, secret microtypes do not implement `Serialize`, to avoid accidentally
+//!  leaking secret data
 //!
 //! ## Serializable Secrets
 //!
-//! That final point can be overly restrictive at times. For example, session tokens might
-//! reasonably be considered "sensitive", but you are likely going to want to serialize them at
-//! some point.
-//!
-//! For this purpose, there is an escape hatch. By declaring a microtype as an `out secret`, a `Serialize`
-//! implementation will be generated for your microtype:
+//! The fact that secret microtypes do not implement `Serialize` can be overly restrictive
+//! sometimes. There are many types (e.g. session tokens) which are sensitive enough to warrant
+//! redacting their debug implementation, but also need to be serialized. For types like this, you
+//! can use `#[secret(serialize)]` to make the type implement `Serialize`.
 //!
 //! ```
 //! # use serde::Serialize;
 //! # use microtype::microtype;
 //! microtype! {
-//!     out secret String {
+//!     #[secret(serialize)]
+//!     String {
 //!         SessionToken
 //!     }
 //! }
@@ -178,9 +171,18 @@
 //! }
 //! ```
 //!
-//! ## Feature Flags
-//! - `serde_impls` - automatically generate `serde` implementations for secret microtypes
-//! - `test_impls` - generate `PartialEq` implementations in tests
+//! ## Feature flags
+//!
+//! The following feature flags are provided, to help customize the behaviour of the types creates:
+//!  - `serde` - when enabled, any type created will derive `Serialize` and `Deserialize`, and will
+//!  be `#[serde(transparent)]`
+//!  - `deref_impls` - some people argue that implementing `Deref` on a non-pointer container is
+//!  unidiomatic. Others prefer the ergonomics of being able to call associated functions more
+//!  easily. If `deref_impls` is enabled, microtypes will deref to their inner types
+//!  - `test_impls` - makes secret microtypes easier to work with in test environments by:
+//!    - making their `Debug` implmentation print their actual value instead of `"REDACTED"`
+//!    - making them derive `PartialEq`
+//!  - `secret` - enables secret microtypes, discussed below:
 
 /* TRAIT DEFS */
 
@@ -189,6 +191,7 @@
 /// Provides some useful common functions for working with microtypes
 pub trait Microtype {
     /// The type of the wrapped value
+    ///
     /// For example, the inner type of an `EmailAddress` could be a `String`
     type Inner;
 
@@ -205,8 +208,10 @@ pub trait Microtype {
     fn inner_mut(&mut self) -> &mut Self::Inner;
 
     /// Explicitly convert from one microtype to another.
-    /// This exists as an alternative to `From`/`Into` implementations to make conversions explicit
-    fn transmute<T: Microtype<Inner = Self::Inner>>(self) -> T;
+    ///
+    /// This exists as an alternative to `From`/`Into` implementations between different
+    /// microtypes to make conversions explicit
+    fn convert<T: Microtype<Inner = Self::Inner>>(self) -> T;
 }
 
 /// A trait implemented by secret microtypes
@@ -218,6 +223,7 @@ pub trait Microtype {
 ///  `.expose_secret()`
 ///
 ///  The wrapped type must also implement [`secrecy::Zeroize`]
+#[cfg(feature = "secret")]
 pub trait SecretMicrotype: secrecy::ExposeSecret<Self::Inner> {
     /// The type of the wrapped value
     /// For example, the inner type of a `Password` could be a `String`
@@ -231,6 +237,7 @@ pub trait SecretMicrotype: secrecy::ExposeSecret<Self::Inner> {
 }
 
 pub use microtype_macro::microtype;
+#[cfg(feature = "secret")]
 pub use secrecy;
 
 #[cfg(test)]

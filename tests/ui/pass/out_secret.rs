@@ -1,8 +1,10 @@
 microtype_macro::microtype! {
-    out secret String {
+    #[secret(serialize)]
+    String {
         Token
     }
-    secret String {
+    #[secret]
+    String {
         Password
     }
 }
