@@ -173,6 +173,11 @@
 //! }
 //! ```
 //!
+//! ## Common cases
+//!
+//! Since wrapping a string is so common, the `#[string]` attribute can be added to a type to
+//! provide a few extra implementations (e.g. `FromStr`, `From<str>`, `Display`)
+//!
 //! ## Feature flags
 //!
 //! The following feature flags are provided, to help customize the behaviour of the types creates:
