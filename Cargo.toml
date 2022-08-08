@@ -1,6 +1,6 @@
 [package]
 name = "microtype"
-version = "0.7.0"
+version = "0.7.1"
 edition = "2021"
 repository = "https://github.com/cameron1024/microtype"
 license = "MIT"

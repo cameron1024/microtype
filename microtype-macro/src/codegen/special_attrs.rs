@@ -10,6 +10,10 @@ fn duplicate_secret(span: Span) -> TokenStream {
     quote_spanned!(span => compile_error!("duplicate `secret` attribute found"))
 }
 
+fn duplicate_string(span: Span) -> TokenStream {
+    quote_spanned!(span => compile_error!("duplicate `string` attribute found"))
+}
+
 pub fn strip_special_attrs(
     attrs: Vec<Attribute>,
 ) -> Result<(Vec<Attribute>, SpecialAttrs), TokenStream> {
@@ -55,13 +59,24 @@ pub fn strip_special_attrs(
         }
     };
 
-    let special_attrs = SpecialAttrs { secret };
+    let (string, attrs): (Vec<_>, Vec<_>) = attrs
+        .into_iter()
+        .partition(|attr| attr.path.is_ident("string"));
+
+    let string = match &string[..] {
+        [] => false,
+        [_single] => true,
+        [_, second, ..] => return Err(duplicate_string(second.span())),
+    };
+
+    let special_attrs = SpecialAttrs { secret, string };
 
     Ok((attrs, special_attrs))
 }
 
 pub struct SpecialAttrs {
     pub secret: Option<SecretAttr>,
+    pub string: bool,
 }
 
 pub struct SecretAttr {
@@ -80,12 +95,13 @@ mod tests {
     #[test]
     fn removes_secret() {
         let microtype: MicrotypeMacro =
-            parse_str("#[derive(Foo)] #[secret] String { Email }").unwrap();
+            parse_str("#[derive(Foo)] #[secret] #[string] String { Email }").unwrap();
         let attrs = microtype.0[0].attrs.clone();
 
-        let (attrs, SpecialAttrs { secret }) = strip_special_attrs(attrs).unwrap();
+        let (attrs, SpecialAttrs { secret, string }) = strip_special_attrs(attrs).unwrap();
         assert!(attrs.len() == 1);
         assert!(secret.is_some());
+        assert!(string);
     }
 
     #[test]
@@ -94,7 +110,7 @@ mod tests {
             parse_str("#[derive(Foo)] #[secret(serialize)] String { Email }").unwrap();
         let attrs = microtype.0[0].attrs.clone();
 
-        let (attrs, SpecialAttrs { secret }) = strip_special_attrs(attrs).unwrap();
+        let (attrs, SpecialAttrs { secret, .. }) = strip_special_attrs(attrs).unwrap();
         assert!(attrs.len() == 1);
         assert!(secret.is_some());
         assert!(secret.unwrap().serialize.is_some());
