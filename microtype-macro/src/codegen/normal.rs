@@ -1,4 +1,7 @@
-use super::{special_attrs::SpecialAttrs, HAS_DEREF_IMPLS, HAS_SERDE};
+use super::{
+    special_attrs::{SpecialAttrs, TypeAnnotation},
+    HAS_DEREF_IMPLS, HAS_SERDE,
+};
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{Attribute, Ident, Type, Visibility};
@@ -52,11 +55,17 @@ fn generate_from_impl(name: &Ident, inner: &Type) -> TokenStream {
 fn generate_deref_impl(name: &Ident, inner: &Type) -> TokenStream {
     if HAS_DEREF_IMPLS {
         quote! {
-            impl ::std::ops::Deref for #name {
+            impl ::core::ops::Deref for #name {
                 type Target = #inner;
 
                 fn deref(&self) -> &Self::Target {
                     &self.0
+                }
+            }
+
+            impl ::core::ops::DerefMut for #name {
+                fn deref_mut(&mut self) -> &mut Self::Target {
+                    &mut self.0
                 }
             }
         }
@@ -114,10 +123,10 @@ pub fn generate_normal(
     let deref_impl = generate_deref_impl(&name, &inner);
     let serde_attrs = serde_derives();
 
-    let string_impls = if special_attrs.string {
-        string_impls(&name)
-    } else {
-        quote! {}
+    let type_specific_impls = match special_attrs.type_annotation {
+        None => quote! {},
+        Some(TypeAnnotation::String) => string_impls(&name),
+        Some(TypeAnnotation::Int) => todo!(),
     };
 
     quote! {
@@ -129,7 +138,6 @@ pub fn generate_normal(
 
         #from_impl
         #deref_impl
-        #string_impls
-
+        #type_specific_impls
     }
 }

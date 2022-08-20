@@ -1,5 +1,6 @@
 #![warn(clippy::all)]
 #![warn(rustdoc::all)]
+#![no_std]
 
 //! A library to generate "microtypes" (A.K.A. "newtypes"). Opinionated in favour of ergonomics
 //! over maximum flexibility.
@@ -183,7 +184,7 @@
 //! The following feature flags are provided, to help customize the behaviour of the types creates:
 //!  - `serde` - when enabled, any type created will derive `Serialize` and `Deserialize`, and will
 //!  be `#[serde(transparent)]`
-//!  - `deref_impls` - some people argue that implementing `Deref` on a non-pointer container is
+//!  - `deref_impls` - some people argue that implementing `Deref` and `DerefMut` on a non-pointer container is
 //!  unidiomatic. Others prefer the ergonomics of being able to call associated functions more
 //!  easily. If `deref_impls` is enabled, microtypes will deref to their inner types
 //!  - `test_impls` - makes secret microtypes easier to work with in test environments by:

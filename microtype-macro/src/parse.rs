@@ -89,8 +89,8 @@ mod tests {
     #[test]
     fn parse_microtype_decl() {
         let microtype_decl: MicrotypeDecl =
-            parse_str("out secret String { #[foo] Email }").unwrap();
-        assert!(microtype_decl.attrs.is_empty());
+            parse_str("#[secret(serialize)] String { #[foo] Email }").unwrap();
+        assert!(microtype_decl.attrs.len() == 1);
         assert_eq!(microtype_decl.idents[0].attributes.len(), 1);
         assert_eq!(microtype_decl.idents[0].ident.to_string(), "Email");
     }
@@ -100,7 +100,8 @@ mod tests {
         let microtype: MicrotypeMacro = parse_str(
             r#"
 #[foo]
-out secret String {
+#[secret(serialize)]
+String {
     Email
 }
 i64 {
@@ -112,7 +113,7 @@ i64 {
 
         assert_eq!(microtype.0.len(), 2);
         let first = &microtype.0[0];
-        assert_eq!(first.attrs.len(), 1);
+        assert_eq!(first.attrs.len(), 2);
         let ty = &first.inner;
         let ty = quote::quote! {#ty};
         assert_eq!(ty.to_string(), "String");

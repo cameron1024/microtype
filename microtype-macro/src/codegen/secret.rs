@@ -1,3 +1,5 @@
+use crate::codegen::special_attrs::TypeAnnotation;
+
 use super::{special_attrs::SpecialAttrs, HAS_SERDE, HAS_TEST_IMPLS};
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -117,7 +119,7 @@ fn generate_structs(
     (tokens, wrapper)
 }
 
-fn string_impls(name: Ident) -> TokenStream {
+fn string_impls(name: &Ident) -> TokenStream {
     quote! {
         impl ::std::str::FromStr for #name {
             type Err = ::std::convert::Infallible;
@@ -149,10 +151,10 @@ pub fn generate_secret(
     let expose_secret_impl = expose_secret_impl(&name, &inner);
     let secret_microtype_impl = secret_microtype_impl(&name, &wrapper, &inner);
 
-    let string_impls = if special_attrs.string {
-        string_impls(name)
-    } else {
-        quote! {}
+    let type_specific_impls = match special_attrs.type_annotation {
+        None => quote! {},
+        Some(TypeAnnotation::String) => string_impls(&name),
+        Some(TypeAnnotation::Int) => todo!(),
     };
 
     quote! {
@@ -162,6 +164,6 @@ pub fn generate_secret(
         #expose_secret_impl
         #secret_microtype_impl
         #test_impls
-        #string_impls
+        #type_specific_impls
     }
 }

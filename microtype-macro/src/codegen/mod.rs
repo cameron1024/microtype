@@ -65,3 +65,4 @@ fn generate_single(
         }
     }
 }
+

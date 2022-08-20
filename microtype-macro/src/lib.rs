@@ -21,7 +21,7 @@ mod codegen;
 /// See crate-level documentation for a more thorough explanation
 ///
 /// Example usage:
-/// ```
+/// ```ignore
 /// # use microtype::microtype;
 /// microtype! {
 ///   #[derive(Debug, Clone)]  // attributes on the outer type apply to all types in this block
@@ -33,13 +33,14 @@ mod codegen;
 ///   }
 ///
 ///   // secret microtypes have extra restrictions to prevent accidental misuse of sensitive data
-///   secret String {
+///   #[secret]
+///   String {
 ///     Password
 ///   }
-///
-///   // "out secret" microtypes have the same restrictions, except that they implement
-///   // serde::Serialize
-///   out secret String {
+///   
+///   // `#[secret(serialize)]` can be used to give a secret microtype a `Serialize` implementation
+///   #[secret(serialize)]
+///   String {
 ///     SessionToken
 ///   }
 /// }

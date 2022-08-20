@@ -45,13 +45,13 @@ mod tests {
         let first = &microtypes[0];
         let second = &microtypes[1];
 
-        assert_eq!(first.attrs.len(), 2);
+        assert_eq!(first.attrs.len(), 3);
         assert_eq!(first.attrs[1].to_token_stream().to_string(), "# [foo]");
         assert_eq!(first.attrs[0].to_token_stream().to_string(), "# [bar]");
         assert_eq!(first.inner.to_token_stream().to_string(), "String");
         assert_eq!(first.name.to_string(), "Email");
 
-        assert_eq!(second.attrs.len(), 2);
+        assert_eq!(second.attrs.len(), 3);
         assert_eq!(second.attrs[1].to_token_stream().to_string(), "# [foo]");
         assert_eq!(second.attrs[0].to_token_stream().to_string(), "# [baz]");
         assert_eq!(second.inner.to_token_stream().to_string(), "String");

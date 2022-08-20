@@ -1,6 +1,13 @@
+mod type_annotation;
+mod int;
+
+pub use type_annotation::TypeAnnotation;
+
 use proc_macro2::{Span, TokenStream};
 use quote::quote_spanned;
 use syn::{spanned::Spanned, Attribute, Ident, Meta, NestedMeta, Path};
+
+use self::type_annotation::strip_type_annotation;
 
 fn generic_err(span: Span) -> TokenStream {
     quote_spanned!(span => compile_error!("expected either `#[secret]` or `#[secret(serialize)]`"))
@@ -8,10 +15,6 @@ fn generic_err(span: Span) -> TokenStream {
 
 fn duplicate_secret(span: Span) -> TokenStream {
     quote_spanned!(span => compile_error!("duplicate `secret` attribute found"))
-}
-
-fn duplicate_string(span: Span) -> TokenStream {
-    quote_spanned!(span => compile_error!("duplicate `string` attribute found"))
 }
 
 pub fn strip_special_attrs(
@@ -59,24 +62,19 @@ pub fn strip_special_attrs(
         }
     };
 
-    let (string, attrs): (Vec<_>, Vec<_>) = attrs
-        .into_iter()
-        .partition(|attr| attr.path.is_ident("string"));
+    let (attrs, type_annotation) = strip_type_annotation(attrs)?;
 
-    let string = match &string[..] {
-        [] => false,
-        [_single] => true,
-        [_, second, ..] => return Err(duplicate_string(second.span())),
+    let special_attrs = SpecialAttrs {
+        secret,
+        type_annotation,
     };
-
-    let special_attrs = SpecialAttrs { secret, string };
 
     Ok((attrs, special_attrs))
 }
 
 pub struct SpecialAttrs {
     pub secret: Option<SecretAttr>,
-    pub string: bool,
+    pub type_annotation: Option<TypeAnnotation>,
 }
 
 pub struct SecretAttr {
@@ -98,10 +96,16 @@ mod tests {
             parse_str("#[derive(Foo)] #[secret] #[string] String { Email }").unwrap();
         let attrs = microtype.0[0].attrs.clone();
 
-        let (attrs, SpecialAttrs { secret, string }) = strip_special_attrs(attrs).unwrap();
+        let (
+            attrs,
+            SpecialAttrs {
+                secret,
+                type_annotation,
+            },
+        ) = strip_special_attrs(attrs).unwrap();
         assert!(attrs.len() == 1);
         assert!(secret.is_some());
-        assert!(string);
+        assert!(type_annotation.unwrap() == TypeAnnotation::String);
     }
 
     #[test]
