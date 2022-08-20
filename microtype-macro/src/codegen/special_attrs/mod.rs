@@ -1,6 +1,8 @@
 mod type_annotation;
 mod int;
 
+pub use int::generate_int_impls;
+
 pub use type_annotation::TypeAnnotation;
 
 use proc_macro2::{Span, TokenStream};

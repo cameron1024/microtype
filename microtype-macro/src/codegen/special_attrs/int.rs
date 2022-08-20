@@ -1,8 +1,8 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{Ident, Type};
+use syn::Ident;
 
-pub fn generate_int_impls(name: &Ident, inner: &Type) -> TokenStream {
+pub fn generate_int_impls(name: &Ident) -> TokenStream {
     quote! {
 
         impl ::std::ops::Add for #name {

@@ -72,4 +72,11 @@ mod tests {
         assert_eq!(attrs.len(), 1);
         assert_eq!(type_annotations, Some(TypeAnnotation::String));
     }
+
+    #[test]
+    fn fails_if_int_and_string() {
+        let microtype: MicrotypeMacro = parse_str("#[int] #[string] String { Email }").unwrap();
+        let attrs = microtype.0[0].attrs.clone();
+        strip_type_annotation(attrs).unwrap_err();
+    }
 }

@@ -24,3 +24,11 @@ jobs:
       run: cargo test --verbose --all-features
     - name: Cargo doc
       run: cargo doc
+    - name: Build (macro)
+      run: (cd microtype-macro; cargo build --verbose)
+    - name: Run tests (macro)
+      run: (cd microtype-macro; cargo test --verbose)
+    - name: Run tests (all features) (macro)
+      run: (cd microtype-macro; cargo test --verbose --all-features)
+    - name: Cargo doc (macro)
+      run: (cd microtype-macro; cargo doc)
