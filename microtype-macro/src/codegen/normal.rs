@@ -1,5 +1,5 @@
 use super::{
-    special_attrs::{generate_int_impls, SpecialAttrs, TypeAnnotation},
+    special_attrs::{generate_int_impls, generate_string_impls, SpecialAttrs, TypeAnnotation},
     HAS_DEREF_IMPLS, HAS_SERDE,
 };
 use proc_macro2::TokenStream;
@@ -85,31 +85,6 @@ fn serde_derives() -> TokenStream {
     }
 }
 
-fn string_impls(name: &Ident) -> TokenStream {
-    quote! {
-        impl ::std::str::FromStr for #name {
-            type Err = ::std::convert::Infallible;
-
-            fn from_str(s: &str) -> Result<Self, Self::Err> {
-                Ok(Self(s.to_string()))
-            }
-
-        }
-
-        impl ::std::fmt::Display for #name {
-            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-                f.write_str(&self.0)
-            }
-        }
-
-        impl ::std::convert::From<&str> for #name {
-            fn from(s: &str) -> Self {
-                Self::from(s.to_string())
-            }
-        }
-    }
-}
-
 pub fn generate_normal(
     inner: Type,
     name: Ident,
@@ -125,8 +100,8 @@ pub fn generate_normal(
 
     let type_specific_impls = match special_attrs.type_annotation {
         None => quote! {},
-        Some(TypeAnnotation::String) => string_impls(&name),
-        Some(TypeAnnotation::Int) => generate_int_impls(&name),
+        Some(TypeAnnotation::String) => generate_string_impls(&name, &inner),
+        Some(TypeAnnotation::Int) => generate_int_impls(&name, &inner),
     };
 
     quote! {

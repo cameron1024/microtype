@@ -121,11 +121,17 @@ fn generate_structs(
 
 fn string_impls(name: &Ident) -> TokenStream {
     quote! {
-        impl ::std::str::FromStr for #name {
+        impl ::core::str::FromStr for #name {
             type Err = ::std::convert::Infallible;
 
-            fn from_str(s: &str) -> Result<Self, Self::Err> {
+            fn from_str(s: &::core::primitive::str) -> Result<Self, Self::Err> {
                 Ok(<Self as ::microtype::SecretMicrotype>::new(s.to_string()))
+            }
+        }
+
+        impl ::core::convert::AsRef<::core::primtitive::str> for #name {
+            fn as_ref(&self) -> &::core::primitive::str {
+                &self.0
             }
         }
     }

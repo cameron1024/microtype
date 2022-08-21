@@ -174,10 +174,44 @@
 //! }
 //! ```
 //!
-//! ## Common cases
+//! ## Type Hints
 //!
-//! Since wrapping a string is so common, the `#[string]` attribute can be added to a type to
-//! provide a few extra implementations (e.g. `FromStr`, `From<str>`, `Display`)
+//! Proc-macros are run before type information is available, so can only use the text of the
+//! invocation. Given that, a proc-macro can't distinguish between the `String` type provided by
+//! the standard library and a custom `struct String;`. You can use a type hint to mark a microtype
+//! as wrapping a well-known type, to generate more helpful implementations for you:
+//!
+//! - If the wrapped type is a `String`, you can use `#[string]` to provide a few extra
+//! implementations (e.g. `FromStr`, `From<&str>`, `Display`)
+//! - If the wrapped type is an integer type, you can use `#[int]` to provide other extra
+//! implementations: various `fmt` traits (e.g. `UpperHex`, etc), as well as arithmetic traits
+//! (`Add`, `AddAssign`, etc). These are incomplete, please open a PR/issue if there are implementations
+//! you rely on that are missing
+//!
+//! For example:
+//! ```
+//! # use microtype::*;
+//! microtype! {
+//!   #[string]
+//!   String {
+//!     Email
+//!   }
+//!
+//!   #[int]
+//!   i32 {
+//!     Num
+//!   }
+//! }
+//!
+//! fn main() {
+//!   let email = Email::from("email");
+//!   let num = Num::from(123);
+//!
+//!   println!("{email}");  
+//!   println!("display: {num}, hex: {num:x}");
+//! }
+//! ``` 
+//!
 //!
 //! ## Feature flags
 //!
