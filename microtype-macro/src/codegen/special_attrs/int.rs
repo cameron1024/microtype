@@ -31,35 +31,35 @@ pub fn generate_int_impls(name: &Ident, inner: &Type) -> TokenStream {
         }
 
         impl ::core::ops::Add for #name {
-            type Output = Num;
+            type Output = #name;
             fn add(self, rhs: Self) -> Self::Output {
                 Self(self.0 + rhs.0)
             }
         }
 
         impl ::core::ops::Sub for #name {
-            type Output = Num;
+            type Output = #name;
             fn sub(self, rhs: Self) -> Self::Output {
                 Self(self.0 - rhs.0)
             }
         }
 
         impl ::core::ops::Mul for #name {
-            type Output = Num;
+            type Output = #name;
             fn mul(self, rhs: Self) -> Self::Output {
                 Self(self.0 * rhs.0)
             }
         }
 
         impl ::core::ops::Div for #name {
-            type Output = Num;
+            type Output = #name;
             fn div(self, rhs: Self) -> Self::Output {
                 Self(self.0 / rhs.0)
             }
         }
 
         impl ::core::ops::Rem for #name {
-            type Output = Num;
+            type Output = #name;
             fn rem(self, rhs: Self) -> Self::Output {
                 Self(self.0 % rhs.0)
             }
