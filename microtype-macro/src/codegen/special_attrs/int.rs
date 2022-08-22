@@ -22,6 +22,13 @@ pub fn generate_int_impls(name: &Ident, inner: &Type) -> TokenStream {
         #lower_exp
         #upper_exp
 
+        impl ::core::str::FromStr for #name {
+            type Err = ::core::num::ParseIntError;
+
+            fn from_str(s: &::core::primitive::str) -> Result<Self, Self::Err> {
+                <#inner as ::core::str::FromStr>::from_str(s).map(Self)
+            }
+        }
 
         impl ::core::ops::Add for #name {
             type Output = Num;

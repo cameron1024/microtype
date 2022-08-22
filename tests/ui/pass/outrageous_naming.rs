@@ -10,8 +10,6 @@ mod core {}
 
 mod std {}
 
-
-
 microtype::microtype! {
     #[string]
     String {
@@ -37,6 +35,8 @@ fn main() {
     num *= Num::from(2);
 
     assert_eq!(num.into_inner(), 123 * 4);
+
+    let _: Num = "123".parse().unwrap();
 }
 
 fn is_as_ref_str(_s: impl AsRef<::core::primitive::str>) {}
