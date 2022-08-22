@@ -129,7 +129,7 @@ fn string_impls(name: &Ident) -> TokenStream {
             }
         }
 
-        impl ::core::convert::AsRef<::core::primtitive::str> for #name {
+        impl ::core::convert::AsRef<::core::primitive::str> for #name {
             fn as_ref(&self) -> &::core::primitive::str {
                 &self.0
             }
