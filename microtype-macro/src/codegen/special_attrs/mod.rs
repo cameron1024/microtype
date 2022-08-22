@@ -4,7 +4,7 @@ mod string;
 mod helpers;
 
 pub use int::generate_int_impls;
-pub use string::generate_string_impls;
+pub use string::*;
 
 pub use type_annotation::TypeAnnotation;
 

@@ -1,5 +1,5 @@
 use super::{
-    special_attrs::{generate_int_impls, generate_string_impls, SpecialAttrs, TypeAnnotation},
+    special_attrs::{generate_int_impls, string_impls, SpecialAttrs, TypeAnnotation},
     HAS_DEREF_IMPLS, HAS_SERDE,
 };
 use proc_macro2::TokenStream;
@@ -100,7 +100,7 @@ pub fn generate_normal(
 
     let type_specific_impls = match special_attrs.type_annotation {
         None => quote! {},
-        Some(TypeAnnotation::String) => generate_string_impls(&name, &inner),
+        Some(TypeAnnotation::String) => string_impls(&name, &inner),
         Some(TypeAnnotation::Int) => generate_int_impls(&name, &inner),
     };
 

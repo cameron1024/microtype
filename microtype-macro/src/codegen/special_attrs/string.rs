@@ -4,8 +4,20 @@ use syn::{parse_str, Ident, Type};
 
 use super::helpers::fmt_impl;
 
-pub fn generate_string_impls(name: &Ident, inner: &Type) -> TokenStream {
-    let display = fmt_impl(name, inner, &parse_str("::core::fmt::Display").unwrap());
+pub fn secret_string_impls(name: &Ident) -> TokenStream {
+    quote! {
+        impl ::core::str::FromStr for #name {
+            type Err = ::core::convert::Infallible;
+
+            fn from_str(s: &::core::primitive::str) -> Result<Self, Self::Err> {
+                Ok(<Self as ::microtype::SecretMicrotype>::new(s.to_string()))
+            }
+        }
+    }
+}
+
+pub fn string_impls(name: &Ident, inner: &Type) -> TokenStream {
+        let display = fmt_impl(name, inner, &parse_str("::core::fmt::Display").unwrap());
 
     quote! {
 
