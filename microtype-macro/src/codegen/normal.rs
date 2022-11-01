@@ -1,4 +1,5 @@
 use super::{
+    diesel::diesel_impl_not_secret,
     special_attrs::{generate_int_impls, string_impls, SpecialAttrs, TypeAnnotation},
     HAS_DEREF_IMPLS, HAS_SERDE,
 };
@@ -98,6 +99,10 @@ pub fn generate_normal(
     let deref_impl = generate_deref_impl(&name, &inner);
     let serde_attrs = serde_derives();
 
+    let diesel_impls = special_attrs
+        .diesel_type
+        .map(|sql_type| diesel_impl_not_secret(&sql_type, &inner, &name));
+
     let type_specific_impls = match special_attrs.type_annotation {
         None => quote! {},
         Some(TypeAnnotation::String) => string_impls(&name, &inner),
@@ -114,5 +119,6 @@ pub fn generate_normal(
         #from_impl
         #deref_impl
         #type_specific_impls
+        #diesel_impls
     }
 }

@@ -19,6 +19,7 @@ const HAS_SERDE: bool = cfg!(feature = "serde");
 const HAS_TEST_IMPLS: bool = cfg!(feature = "test_impls");
 const HAS_DEREF_IMPLS: bool = cfg!(feature = "deref_impls");
 const HAS_SECRET: bool = cfg!(feature = "secret");
+const HAS_DIESEL: bool = cfg!(feature = "diesel");
 
 pub fn codegen(microtypes: Vec<Microtype>) -> TokenStream {
     let mut stream = TokenStream::new();

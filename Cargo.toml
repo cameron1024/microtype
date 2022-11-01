@@ -1,6 +1,6 @@
 [package]
 name = "microtype"
-version = "0.7.5"
+version = "0.7.6"
 edition = "2021"
 repository = "https://github.com/cameron1024/microtype"
 license = "MIT"
@@ -9,7 +9,7 @@ description = "A crate to simplify the creation of microtypes"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-microtype-macro = { version = "0.2.5", path = "./microtype-macro" }
+microtype-macro = { version = "0.2.6", path = "./microtype-macro" }
 secrecy = { version = "0.8", optional = true }
 
 [dev-dependencies]
@@ -24,3 +24,4 @@ secret = ["secrecy", "microtype-macro/secret"]
 serde = ["secrecy/serde", "microtype-macro/serde"]
 test_impls = ["microtype-macro/test_impls"]
 deref_impls = ["microtype-macro/deref_impls"]
+diesel = ["microtype-macro/diesel"]

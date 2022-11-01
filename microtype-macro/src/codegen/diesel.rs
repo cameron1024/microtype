@@ -1,74 +1,98 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{Attribute, Ident, Type};
+use syn::{Ident, Type};
 
-use crate::parse::DieselTypeAttr;
+use super::HAS_DIESEL;
 
-#[allow(dead_code)]
-fn parse_diesel_attr(attr: &Attribute) -> Option<Ident> {
-    if attr.path.get_ident().map(Ident::to_string) == Some("sql_type".into()) {
-        match attr.parse_args::<DieselTypeAttr>() {
-            Ok(DieselTypeAttr { ty }) => Some(ty),
-            _ => None,
+pub fn diesel_impl_not_secret(sql_type: &Type, inner: &Type, name: &Ident) -> TokenStream {
+    let from_sql = from_sql_not_secret(sql_type, inner, name);
+    let to_sql = to_sql_not_secret(sql_type, inner, name);
+
+    if HAS_DIESEL {
+        quote! {
+            #from_sql
+            #to_sql
         }
     } else {
-        None
+        quote! {}
     }
 }
 
-#[allow(dead_code)]
-pub fn generate_diesel_impls(
-    inner: Type,
-    name: Ident,
-    attrs: &[Attribute],
-    secret: bool,
-) -> TokenStream {
-    let new = if secret {
+pub fn diesel_impl_secret(sql_type: &Type, inner: &Type, name: &Ident) -> TokenStream {
+    let from_sql = from_sql_secret(sql_type, inner, name);
+    let to_sql = to_sql_secret(sql_type, inner, name);
+
+    if HAS_DIESEL {
         quote! {
-            <#name as ::microtype::SecretMicrotype>::new
+            #from_sql
+            #to_sql
         }
     } else {
-        quote! {
-            <#name as ::microtype::Microtype>::new
+        quote! {}
+    }
+}
+
+fn from_sql_not_secret(sql_type: &Type, inner: &Type, name: &Ident) -> TokenStream {
+    quote! {
+        impl<B: ::diesel::backend::Backend> ::diesel::deserialize::FromSql<#sql_type, B> for #name
+        where
+            #inner: ::diesel::deserialize::FromSql<#sql_type, B>,
+        {
+            fn from_sql(
+                bytes: ::diesel::backend::RawValue<'_, B>,
+            ) -> ::diesel::deserialize::Result<Self> {
+                <#inner as ::diesel::deserialize::FromSql<#sql_type, B>>::from_sql(bytes).map(#name)
+            }
         }
-    };
+    }
+}
 
-    let from = if secret {
-        quote! {
-            <#name as ::microtype::secrecy::ExposeSecret<#inner>>::expose_secret(self)
+fn to_sql_not_secret(sql_type: &Type, inner: &Type, name: &Ident) -> TokenStream {
+    quote! {
+        impl<B: ::diesel::backend::Backend> ::diesel::serialize::ToSql<#sql_type, B> for #name
+        where
+            #inner: ::diesel::serialize::ToSql<#sql_type, B>,
+        {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut diesel::serialize::Output<'b, '_, B>,
+            ) -> diesel::serialize::Result {
+                <#inner as ::diesel::serialize::ToSql<#sql_type, B>>::to_sql(&self.0, out)
+            }
         }
-    } else {
-        quote! {
-            <#name as ::microtype::Microtype>::inner(self)
+
+    }
+}
+
+fn from_sql_secret(sql_type: &Type, inner: &Type, name: &Ident) -> TokenStream {
+    quote! {
+        impl<B: ::diesel::backend::Backend> ::diesel::deserialize::FromSql<#sql_type, B> for #name
+        where
+            #inner: ::diesel::deserialize::FromSql<#sql_type, B>,
+        {
+            fn from_sql(bytes: ::diesel::backend::RawValue<'_, B>) -> ::diesel::deserialize::Result<Self> {
+                <#inner as ::diesel::deserialize::FromSql<#sql_type, B>>::from_sql(bytes)
+                    .map(<Self as ::microtype::SecretMicrotype>::new)
+            }
         }
-    };
 
+    }
+}
 
-    let attr = attrs.iter().find_map(parse_diesel_attr);
-
-    match attr {
-        None => quote! {},
-        Some(diesel_type) => {
-            quote! {
-                impl<B: ::diesel::backend::Backend> ::diesel::types::FromSql<#diesel_type, B> for #name {
-                    fn from_sql(bytes: ::std::option::Option<&B::RawValue>) -> ::diesel::deserialize::Result<Self> {
-                        <#inner as ::diesel::types::FromSql<$diesel, B>::from_sql(bytes).map(#new)
-                    }
-                }
-
-                impl<B: ::diesel::backend::Backend> ::diesel::types::ToSql<#diesel_type, B> for #name {
-                    fn to_sql<W: ::std::io::Write>(
-                            &self,
-                            out: &mut ::diesel::serialize::Output<W, B>,
-                        ) -> ::diesel::serialize::Result {
-
-                        <#inner as ToSql<#diesel_type, B>::to_sql(
-                            #from
-                            out,
-                        )
-
-                    }
-                }
+fn to_sql_secret(sql_type: &Type, inner: &Type, name: &Ident) -> TokenStream {
+    quote! {
+        impl<B: ::diesel::backend::Backend> ::diesel::serialize::ToSql<#sql_type, B> for #name
+        where
+            #inner: ::diesel::serialize::ToSql<#sql_type, B>,
+        {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut diesel::serialize::Output<'b, '_, B>,
+            ) -> diesel::serialize::Result {
+                <#inner as ::diesel::serialize::ToSql<#sql_type, B>>::to_sql(
+                    <Self as ::microtype::secrecy::ExposeSecret<#inner>>::expose_secret(&self),
+                    out,
+                )
             }
         }
     }

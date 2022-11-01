@@ -225,6 +225,9 @@
 //!    - making their `Debug` implmentation print their actual value instead of `"REDACTED"`
 //!    - making them derive `PartialEq`
 //!  - `secret` - enables secret microtypes, discussed below:
+//!  - `diesel` - if enabled, any attribtes of the form `#[diesel(sql_type = ...)]` will be
+//!  captured, and `FromSql` and `ToSql` implementations will be generated. Note, you will
+//!  generally also want to `#[derive(AsExpression, FromSqlRow)]`
 
 /* TRAIT DEFS */
 

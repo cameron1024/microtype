@@ -1,6 +1,6 @@
 [package]
 name = "microtype-macro"
-version = "0.2.5"
+version = "0.2.6"
 edition = "2021"
 license = "MIT"
 description = "Proc macro for generating microtypes"
@@ -24,4 +24,4 @@ serde = []
 deref_impls = []
 test_impls = []
 secret = []
-
+diesel = []

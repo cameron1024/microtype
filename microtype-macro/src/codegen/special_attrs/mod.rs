@@ -1,7 +1,8 @@
-mod type_annotation;
+mod diesel;
+mod helpers;
 mod int;
 mod string;
-mod helpers;
+mod type_annotation;
 
 pub use int::generate_int_impls;
 pub use string::*;
@@ -10,9 +11,9 @@ pub use type_annotation::TypeAnnotation;
 
 use proc_macro2::{Span, TokenStream};
 use quote::quote_spanned;
-use syn::{spanned::Spanned, Attribute, Ident, Meta, NestedMeta, Path};
+use syn::{spanned::Spanned, Attribute, Ident, Meta, NestedMeta, Path, Type};
 
-use self::type_annotation::strip_type_annotation;
+use self::{diesel::find_diesel_attr, type_annotation::strip_type_annotation};
 
 fn generic_err(span: Span) -> TokenStream {
     quote_spanned!(span => compile_error!("expected either `#[secret]` or `#[secret(serialize)]`"))
@@ -68,10 +69,12 @@ pub fn strip_special_attrs(
     };
 
     let (attrs, type_annotation) = strip_type_annotation(attrs)?;
+    let diesel_type = find_diesel_attr(&attrs);
 
     let special_attrs = SpecialAttrs {
         secret,
         type_annotation,
+        diesel_type,
     };
 
     Ok((attrs, special_attrs))
@@ -80,6 +83,7 @@ pub fn strip_special_attrs(
 pub struct SpecialAttrs {
     pub secret: Option<SecretAttr>,
     pub type_annotation: Option<TypeAnnotation>,
+    pub diesel_type: Option<Type>,
 }
 
 pub struct SecretAttr {
@@ -106,6 +110,7 @@ mod tests {
             SpecialAttrs {
                 secret,
                 type_annotation,
+                ..
             },
         ) = strip_special_attrs(attrs).unwrap();
         assert!(attrs.len() == 1);

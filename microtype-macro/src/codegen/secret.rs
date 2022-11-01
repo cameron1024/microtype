@@ -1,4 +1,7 @@
-use crate::codegen::special_attrs::{secret_string_impls, TypeAnnotation};
+use crate::codegen::{
+    diesel::diesel_impl_secret,
+    special_attrs::{secret_string_impls, TypeAnnotation},
+};
 
 use super::{special_attrs::SpecialAttrs, HAS_SERDE, HAS_TEST_IMPLS};
 use proc_macro2::TokenStream;
@@ -138,6 +141,9 @@ pub fn generate_secret(
     let test_impls = test_impls(&name);
     let expose_secret_impl = expose_secret_impl(&name, &inner);
     let secret_microtype_impl = secret_microtype_impl(&name, &wrapper, &inner);
+    let diesel_impls = special_attrs
+        .diesel_type
+        .map(|sql_type| diesel_impl_secret(&sql_type, &inner, &name));
 
     let type_specific_impls = match special_attrs.type_annotation {
         None => quote! {},
@@ -153,5 +159,6 @@ pub fn generate_secret(
         #secret_microtype_impl
         #test_impls
         #type_specific_impls
+        #diesel_impls
     }
 }
